@@ -53,7 +53,7 @@ VOID app_audio_pad_enable(VOID)
 	temp |= BIT_SYS_AMACRO_EN;
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_LP_FUNC_EN0, temp);
 
-	//0x4800_0344[9] = 1'b1: £¨1: Enable Audio pad function, 0: disable£©
+	//0x4800_0344[9] = 1'b1: ï¿½ï¿½1: Enable Audio pad function, 0: disableï¿½ï¿½
 	temp = HAL_READ32(SYSTEM_CTRL_BASE_LP, REG_AUDIO_SHARE_PAD_CTRL);
 	temp |= BIT_LSYS_AC_ANA_PORB;
 	HAL_WRITE32(SYSTEM_CTRL_BASE_LP, REG_AUDIO_SHARE_PAD_CTRL, temp);
@@ -224,6 +224,8 @@ int main(void)
 	app_audio_pad_enable();
 
 	//DiagPrintfD("M0U:%d\n", RTIM_GetCount(TIMM05));
+
+	DBG_8195A("Hello World - LP Part");
 
 	//Enable Schedule
 	vTaskStartScheduler();

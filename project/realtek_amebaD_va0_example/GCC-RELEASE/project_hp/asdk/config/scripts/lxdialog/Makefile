@@ -1,5 +1,9 @@
 HOSTCFLAGS += -DLOCALE 
+LD_LIBRARY_PATH=/opt/homebrew/Cellar/ncurses/6.5/lib:${LD_LIBRARY_PATH}
+
 LIBS = -lncurses
+
+
 
 #ifeq (/usr/include/ncurses/ncurses.h, $(wildcard /usr/include/ncurses/ncurses.h))
 	HOSTCFLAGS += -I/usr/include/ncurses -DCURSES_LOC="<ncurses.h>"
@@ -22,7 +26,7 @@ OBJS = checklist.o menubox.o textbox.o yesno.o inputbox.o \
 %.o: %.c
 	$(HOSTCC) $(HOSTCFLAGS) -c -o $@ $<
 
-all: ncurses lxdialog
+all: lxdialog
 
 lxdialog: $(OBJS)
 	$(HOSTCC) -o lxdialog $(OBJS) $(LIBS)

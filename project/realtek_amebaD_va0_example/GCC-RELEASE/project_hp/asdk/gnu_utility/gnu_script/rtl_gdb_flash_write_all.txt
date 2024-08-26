@@ -125,7 +125,7 @@ c
 
 #=============================================================================== 
 #flash write
-set $IMGAllSize =1048576
+set $IMGAllSize =
 set FlashAddrForWrite =0x00000
 flash_write $IMAGE_ALL $IMGAllSize
 

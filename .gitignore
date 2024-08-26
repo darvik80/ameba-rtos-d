@@ -24,3 +24,4 @@ build_info.h
 *.dep
 *.ewt
 /**/EWARM-RELEASE/Debug/
+images
