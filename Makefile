@@ -1,8 +1,6 @@
 MAKE := make
 CC := gcc
 
-.PHONY: all clean flash
-
 DIR_MAIN := project/realtek_amebaD_va0_example
 DIR_COMPONENT := component
 
@@ -10,6 +8,8 @@ SRC := $(wildcard **/*.c */*/*.c */*/*/*.c */*/*/*/*.c */*/*/*/*/*.c */*/*/*/*/*
 INC := $(shell find $(DIR_COMPONENT) -type d)
 INC += $(shell find $(DIR_MAIN) -type d)
 INC_DIR := $(foreach d, $(INC), -I$d)
+
+.PHONY: all clean flash stub
 
 stub:
 	$(CC) -c $(SRC) -I$(INC_DIR)

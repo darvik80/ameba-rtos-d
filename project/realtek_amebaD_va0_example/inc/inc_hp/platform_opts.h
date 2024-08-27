@@ -410,7 +410,7 @@
 #endif
 
 /* For UART Module AT command example */
-#define CONFIG_EXAMPLE_UART_ATCMD	0
+#define CONFIG_EXAMPLE_UART_ATCMD	1
 #if CONFIG_EXAMPLE_UART_ATCMD
 #undef CONFIG_OTA_UPDATE
 #define CONFIG_OTA_UPDATE 1
