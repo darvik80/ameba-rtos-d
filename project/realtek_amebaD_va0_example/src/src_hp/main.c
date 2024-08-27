@@ -1,6 +1,7 @@
 
 #include "ameba_soc.h"
-#include "main.h"
+#include "example_entry.h"
+#include "rtl8721d_system.h"
 
 #if defined(CONFIG_FTL_ENABLED)
 #include "ftl_int.h"
@@ -13,7 +14,7 @@ void app_ftl_init(void)
 }
 #endif
 
-#if defined(CONFIG_WIFI_NORMAL) && defined(CONFIG_NETWORK)
+#if defined(CONFIG_WIFI_NORMAL) && defined( CONFIG_NETWORK)
 extern VOID wlan_network(VOID);
 extern u32 GlobalDebugEnable;
 #endif
@@ -176,8 +177,11 @@ int main(void)
 	//if ((BKUP_Read(0) & BIT_GPIO_ENABLE))
 	//	app_hp_jack_init(); 
 
-	//DBG_8195A("M4U:%d \n", RTIM_GetCount(TIMM05));
+	DBG_8195A("M4U:%d \n", RTIM_GetCount(TIMM05));
 	/* Enable Schedule, Start Kernel */
+
+    printf("Hello World - HP Part\r\n");
+	DBG_8195A("Hello World - HP-DBG\r\n");
 	vTaskStartScheduler();
 }
 

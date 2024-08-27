@@ -19,7 +19,7 @@ char uart_buf[64];
 
 
 /* WLAN and Netork */
-#define STA_MODE_SSID	"ap"    /* Set SSID here */
+#define STA_MODE_SSID	"alibab"    /* Set SSID here */
 #define AP_MODE_SSID		"wlan_ap_ssid"    /* Set SSID here */
 #define AP_DEFAULT_CH	6
 #define WLAN0_NAME		"wlan0"

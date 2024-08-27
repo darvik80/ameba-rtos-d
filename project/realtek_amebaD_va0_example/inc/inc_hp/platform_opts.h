@@ -409,8 +409,12 @@
 #define FATFS_DISK_SD	1
 #endif
 
+#define ATVER_1 1 // For First AT command
+#define ATVER_2 2 // For UART Module AT command
+
+
 /* For UART Module AT command example */
-#define CONFIG_EXAMPLE_UART_ATCMD	0
+#define CONFIG_EXAMPLE_UART_ATCMD	1
 #if CONFIG_EXAMPLE_UART_ATCMD
 #undef CONFIG_OTA_UPDATE
 #define CONFIG_OTA_UPDATE 1
@@ -421,7 +425,10 @@
 #undef CONFIG_LOG_SERVICE_LOCK
 #define CONFIG_LOG_SERVICE_LOCK 1
 #undef CONFIG_EXAMPLE_WLAN_FAST_CONNECT
-#define CONFIG_EXAMPLE_WLAN_FAST_CONNECT  0
+#define CONFIG_EXAMPLE_WLAN_FAST_CONNECT  1
+
+#define ATCMD_VER ATVER_2
+
 #endif
 
 /* For SPI Module AT command example */
@@ -530,7 +537,7 @@
 #define CONFIG_INIC_HOST	1
 
 #undef CONFIG_WLAN
-#define CONFIG_WLAN		0
+#define CONFIG_WLAN		1
 #undef	CONFIG_INCLUDE_SIMPLE_CONFIG
 #define CONFIG_INCLUDE_SIMPLE_CONFIG    0
 #undef	CONFIG_EXAMPLE_WLAN_FAST_CONNECT

@@ -104,10 +104,16 @@ ASDK_TOOLCHAIN_R = ../toolchain/darwin/asdk-6.5.0/darwin/newlib
 TOOLCHAINNAME = asdk-6.5.0-darwin-newlib-build-3078-x86_64.tar.bz2
 TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/6.5.0/asdk-6.5.0-darwin-newlib-build-3078-x86_64.tar.bz2
 else
-ASDK_TOOLCHAIN = $(TOOLCHAINDIR)/darwin/asdk-10.4.1/darwin/newlib
-ASDK_TOOLCHAIN_R = ../toolchain/darwin/asdk-10.4.1/darwin/newlib
-TOOLCHAINNAME = asdk-10.4.1-darwin-newlib-build-3779-arm64.tar.bz2
-TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/6.5.0/asdk-10.4.1-darwin-newlib-build-3779-arm64.tar.bz2
+#ASDK_TOOLCHAIN = $(TOOLCHAINDIR)/darwin/asdk-10.4.1/darwin/newlib
+#ASDK_TOOLCHAIN_R = ../toolchain/darwin/asdk-10.4.1/darwin/newlib
+#TOOLCHAINNAME = asdk-10.4.1-darwin-newlib-build-3779-arm64.tar.bz2
+#TOOLCHAINURL	= https://github.com/Ameba-AIoT/ameba-toolchain/releases/download/6.5.0/asdk-10.4.1-darwin-newlib-build-3779-arm64.tar.bz2
+
+ASDK_TOOLCHAIN = $(TOOLCHAINDIR)/darwin/asdk-6.5.0
+ASDK_TOOLCHAIN_R = ../toolchain/darwin/asdk-6.5.0
+TOOLCHAINNAME = ameba_d_toolchain_macos-1.0.1.tar.bz2
+TOOLCHAINURL	= https://github.com/ambiot/ambd_arduino/raw/master/Arduino_package/release/ameba_d_toolchain_macos-1.0.1.tar.bz2
+
 endif
 endif
 

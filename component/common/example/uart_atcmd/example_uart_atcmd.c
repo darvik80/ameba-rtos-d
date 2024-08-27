@@ -153,7 +153,7 @@ int read_uart_atcmd_setting_from_system_data(UART_LOG_CONF* uartconf)
 
 	if(load_default == _TRUE){
 		// load default setting
-		uartconf->BaudRate = 38400;
+		uartconf->BaudRate = 115200;
 		uartconf->DataBits = 8;
 		uartconf->Parity = ParityNone;
 		uartconf->StopBits = 1;

@@ -1,4 +1,4 @@
-include ./asdk/config/.config
+# include ./asdk/config/.config
 
 .PHONY: all clean flash debug setup
 
@@ -69,14 +69,14 @@ gdbloadrom: CORE_TARGETS
 swdpwd: CORE_TARGETS
 	make -C asdk swdpwd
 
-#image2: CORE_TARGETS
-#	make -C asdk image2
-#
-#bootloader: CORE_TARGETS
-#	make -C asdk bootloader
-#
-#flashloader:
-#	make -C asdk flashloader
+image2: CORE_TARGETS
+	make -C asdk image2
+
+bootloader: CORE_TARGETS
+	make -C asdk bootloader
+
+flashloader:
+	make -C asdk flashloader
 #
 #
 #gdbboot: CORE_TARGETS

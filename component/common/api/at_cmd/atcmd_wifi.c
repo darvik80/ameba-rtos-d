@@ -13,6 +13,7 @@
 #include <wifi/wifi_util.h>
 #endif
 
+#include "atcmd_wifi.h"
 #if ATCMD_VER == ATVER_2
 #include "flash_api.h"
 #include "device_lock.h"
@@ -26,6 +27,8 @@
 #ifdef WIFI_PERFORMANCE_MONITOR
 #include "wifi_performance_monitor.h"
 #endif
+
+#include <unistd.h>
 
 #include "platform_opts.h"
 #if defined(CONFIG_PLATFORM_8710C)||defined(CONFIG_PLATFORM_8721D)
@@ -97,7 +100,7 @@ extern void show_bridgeif_fdbd(struct netif *netif);
 extern void cmd_iperf(int argc, char **argv);
 extern void cmd_ping(int argc, char **argv);
 extern void cmd_ssl_client(int argc, char **argv);
-#endif 
+#endif
 
 #if CONFIG_WLAN
 extern void cmd_promisc(int argc, char **argv);
@@ -130,7 +133,7 @@ extern int airkiss_start(rtw_network_info_t *);
 extern int airkiss_stop(void);
 #endif
 #if CONFIG_LWIP_LAYER
-extern struct netif xnetif[NET_IF_NUM]; 
+extern struct netif xnetif[NET_IF_NUM];
 #endif
 #if CONFIG_WOWLAN_SERVICE
 extern void cmd_wowlan_service(int argc, char **argv);
@@ -173,7 +176,7 @@ rtw_mode_t wifi_mode_new = RTW_MODE_STA;
 static void init_wifi_struct(void)
 {
 	memset(wifi.ssid.val, 0, sizeof(wifi.ssid.val));
-	memset(wifi.bssid.octet, 0, ETH_ALEN);	
+	memset(wifi.bssid.octet, 0, ETH_ALEN);
 	memset(password, 0, sizeof(password));
 	wifi.ssid.len = 0;
 	wifi.password = NULL;
@@ -368,7 +371,7 @@ exit_success:
 #if ATCMD_VER == ATVER_2
 	at_printf("%sOK\r\n", "+WLDISCONN:");
 	ATCMD_NEWLINE_HASHTAG();
-#endif	
+#endif
 	return;
 }
 
@@ -383,7 +386,7 @@ void fATWQ(void *arg){
 	}
 #if ATCMD_VER == ATVER_2
 	wifi_unreg_event_handler(WIFI_EVENT_DISCONNECT, atcmd_wifi_disconn_hdl);
-#endif		
+#endif
 	cmd_simple_config(argc, argv);
 }
 #endif
@@ -393,7 +396,7 @@ void fATWq(void *arg)
 {
     int argc;
     char *argv[MAX_ARGC] = {0};
-	
+
 	char buf[256] = {0};
     printf("[ATWq]:\n\r");
     if(arg){
@@ -695,14 +698,14 @@ void fGHRA(void* arg)
 	unsigned int rate_fallback_1_4 = 0;
 	unsigned int rate_fallback_5_8 = 0;
 	unsigned char len = strlen(c_arg);
-	
+
 	for (int i = 0; i <4; i++) {
 		if (j == len)
 			break;
 		rate_fallback_1_4 |= (*(c_arg + j) - '0') << (i*8);
 		j++;
 	}
-	
+
 	for (int i = 0; i <4; i++) {
 		if (j == len)
 			break;
@@ -738,17 +741,17 @@ void fATW1(void *arg){
 		printf("[ATW1]Usage: ATW1=PASSPHRASE\n\r");
 		ret = RTW_BADARG;
 		goto exit;
-	}	
-	printf("[ATW1]: _AT_WLAN_SET_PASSPHRASE_ [%s]\n\r", (char*)arg); 
+	}
+	printf("[ATW1]: _AT_WLAN_SET_PASSPHRASE_ [%s]\n\r", (char*)arg);
 
-	strncpy((char *)password, (char*)arg, sizeof(password));	
+	strncpy((char *)password, (char*)arg, sizeof(password));
 	wifi.password = password;
 	wifi.password_len = strlen((char*)arg);
 exit:
 #if defined(CONFIG_INIC_CMD_RSP) && CONFIG_INIC_CMD_RSP
 	inic_c2h_msg("ATW1", ret, NULL, 0);
 #endif
-	return;	
+	return;
 }
 
 void fATW2(void *arg){
@@ -758,7 +761,7 @@ void fATW2(void *arg){
 		printf("[ATW2]Usage: ATW2=KEYID\n\r");
 		ret = RTW_BADARG;
 		goto exit;
-	}	
+	}
         printf("[ATW2]: _AT_WLAN_SET_KEY_ID_ [%s]\n\r", (char*)arg);
 		if((strlen((const char *)arg) != 1 ) || (*(char*)arg <'0' ||*(char*)arg >'3')) {
 			printf("\n\rWrong WEP key id. Must be one of 0,1,2, or 3.");
@@ -791,7 +794,7 @@ void fATW3(void *arg){
     }
 	strncpy((char *)ap.ssid.val, (char*)arg, sizeof(ap.ssid.val));
 
-	printf("[ATW3]: _AT_WLAN_AP_SET_SSID_ [%s]\n\r", ap.ssid.val); 
+	printf("[ATW3]: _AT_WLAN_AP_SET_SSID_ [%s]\n\r", ap.ssid.val);
 exit:
 #if defined(CONFIG_INIC_CMD_RSP) && CONFIG_INIC_CMD_RSP
 	inic_c2h_msg("ATW3", ret, NULL, 0);
@@ -969,7 +972,7 @@ void fATWA(void *arg){
 #endif
 	int timeout = 20;
 	volatile int ret = RTW_SUCCESS;
-	printf("[ATWA]: _AT_WLAN_AP_ACTIVATE_\n\r"); 
+	printf("[ATWA]: _AT_WLAN_AP_ACTIVATE_\n\r");
 	if(ap.ssid.val[0] == 0){
 		printf("[ATWA]Error: SSID can't be empty\n\r");
 		ret = RTW_BADARG;
@@ -980,7 +983,7 @@ void fATWA(void *arg){
 	}
 	else{
 		if(ap.password_len <= RTW_WPA2_MAX_PSK_LEN &&
-			ap.password_len >= RTW_MIN_PSK_LEN){ 
+			ap.password_len >= RTW_MIN_PSK_LEN){
 			ap.security_type = RTW_SECURITY_WPA2_AES_PSK;
 			if(ap.password_len == RTW_WPA2_MAX_PSK_LEN){//password_len=64 means pre-shared key, pre-shared key should be 64 hex characters
 				unsigned char i,j;
@@ -1062,14 +1065,14 @@ void fATWA(void *arg){
 
 		if(timeout == 0) {
 			printf("\n\rERROR: Start AP timeout!");
-			ret = RTW_TIMEOUT;		
+			ret = RTW_TIMEOUT;
 			break;
 		}
 
 		vTaskDelay(1 * configTICK_RATE_HZ);
 		timeout --;
 	}
-	
+
 #if defined( CONFIG_ENABLE_AP_POLLING_CLIENT_ALIVE )&&( CONFIG_ENABLE_AP_POLLING_CLIENT_ALIVE == 1 )
 	wifi_set_ap_polling_sta(1);
 #endif
@@ -1104,7 +1107,7 @@ static int _find_ap_from_scan_buf(char*buf, int buflen, char *target_ssid, void 
 {
 	rtw_wifi_setting_t *pwifi = (rtw_wifi_setting_t *)user_data;
 	int plen = 0;
-	
+
 	while(plen < buflen){
 		u8 len, ssid_len, security_mode;
 		char *ssid;
@@ -1153,7 +1156,7 @@ static int _get_ap_security_mode(IN char * ssid, OUT rtw_security_t *security_mo
 		*channel = wifi.channel;
 		return 1;
 	}
-	
+
 	return 0;
 }
 extern u8 rltk_wlan_channel_switch_announcement_is_enable(void);
@@ -1198,7 +1201,7 @@ void fATWC(void *arg){
 		    ret = RTW_ERROR;
 		    goto EXIT;
 		}
-#else	
+#else
 		wifi_off();
 		vTaskDelay(20);
 		if (wifi_on(RTW_MODE_STA) < 0){
@@ -1212,7 +1215,7 @@ void fATWC(void *arg){
 #if CONFIG_INIC_EN //get security mode from scan list
 	u8 connect_channel;
 	u8 pscan_config;
-	//the keyID may be not set for WEP which may be confued with WPA2 
+	//the keyID may be not set for WEP which may be confued with WPA2
 	if((wifi.security_type == RTW_SECURITY_UNKNOWN)||(wifi.security_type == RTW_SECURITY_WPA2_AES_PSK))
 	{
 		int security_retry_count = 0;
@@ -1235,7 +1238,7 @@ void fATWC(void *arg){
 			if(wifi.password_len == 10)
 			{
 				u32 p[5];
-				u8 pwd[6], i = 0; 
+				u8 pwd[6], i = 0;
 				sscanf((const char*)wifi.password, "%02x%02x%02x%02x%02x", &p[0], &p[1], &p[2], &p[3], &p[4]);
 				for(i=0; i< 5; i++)
 					pwd[i] = (u8)p[i];
@@ -1292,18 +1295,18 @@ void fATWC(void *arg){
 
 	if(assoc_by_bssid){
 		printf("\n\rJoining BSS by BSSID "MAC_FMT" ...\n\r", MAC_ARG(wifi.bssid.octet));
-		ret = wifi_connect_bssid(wifi.bssid.octet, (char*)wifi.ssid.val, wifi.security_type, (char*)wifi.password, 
-						ETH_ALEN, wifi.ssid.len, wifi.password_len, wifi.key_id, NULL);		
+		ret = wifi_connect_bssid(wifi.bssid.octet, (char*)wifi.ssid.val, wifi.security_type, (char*)wifi.password,
+						ETH_ALEN, wifi.ssid.len, wifi.password_len, wifi.key_id, NULL);
 	} else {
 		printf("\n\rJoining BSS by SSID %s...\n\r", (char*)wifi.ssid.val);
 		ret = wifi_connect((char*)wifi.ssid.val, wifi.security_type, (char*)wifi.password, wifi.ssid.len,
 						wifi.password_len, wifi.key_id, NULL);
 	}
-	
+
 	if(ret!= RTW_SUCCESS){
 		if(ret == RTW_INVALID_KEY)
 			printf("\n\rERROR:Invalid Key ");
-		
+
 		printf("\n\rERROR: Can't connect to AP");
 		goto EXIT;
 	}
@@ -1345,7 +1348,7 @@ void fATWs(void *arg){
 		strncpy(buf, arg, sizeof(buf));
 		argc = parse_param(buf, argv);
 		if(argc == 2){
-			scan_buf_len = atoi(argv[1]);  	
+			scan_buf_len = atoi(argv[1]);
 			if(scan_buf_len < 36){
 				printf("[ATWs] BUFFER_LENGTH too short\n\r");
 				goto exit;
@@ -1361,11 +1364,11 @@ void fATWs(void *arg){
 			if(!pscan_config){
 				printf("[ATWs]ERROR: Can't malloc memory for pscan_config\n\r");
 				goto exit;
-		  	}			
+		  	}
 			//parse command channel list
 			for(i = 2; i <= argc -1 ; i++){
 				*(channel_list + i - 2) = (u8)atoi(argv[i]);
-				*(pscan_config + i - 2) = PSCAN_ENABLE;	
+				*(pscan_config + i - 2) = PSCAN_ENABLE;
 			}
 
 			if(wifi_set_pscan_chan(channel_list, pscan_config, num_channel) < 0){
@@ -1374,7 +1377,7 @@ void fATWs(void *arg){
 			}
 		}
 	}else{
-		printf("[ATWs]For Scan all channel Usage: ATWs=BUFFER_LENGTH\n\r");          
+		printf("[ATWs]For Scan all channel Usage: ATWs=BUFFER_LENGTH\n\r");
 		printf("[ATWs]For Scan partial channel Usage: ATWs=num_channels[channel_num1, ...]\n\r");
 		goto exit;
 	}
@@ -1387,16 +1390,16 @@ exit:
 	if(arg && channel_list)
 		free(channel_list);
 	if(arg && pscan_config)
-		free(pscan_config);	
+		free(pscan_config);
 }
 #endif
 
 void fATWR(void *arg){
 	/* To avoid gcc warnings */
 	( void ) arg;
-	
+
 	int rssi = 0;
-	printf("[ATWR]: _AT_WLAN_GET_RSSI_\n\r"); 
+	printf("[ATWR]: _AT_WLAN_GET_RSSI_\n\r");
 	wifi_get_rssi(&rssi);
 	printf("\n\rwifi_get_rssi: rssi = %d", rssi);
 	printf("\n\r");
@@ -1438,7 +1441,7 @@ void fATWP(void *arg){
 void fATWV(void *arg){
 	int argc;
 	char *argv[MAX_ARGC] = {0};
-	
+
 	printf("[ATWV]: _AT_WLAN_WOWLAN_\r\n");
 
 	argc = parse_param(arg, argv);
@@ -1454,13 +1457,13 @@ void fATWB(void *arg)
 {
 	/* To avoid gcc warnings */
 	( void ) arg;
-	
+
 	int timeout = 20;//, mode;
 	volatile int ret = RTW_SUCCESS;
 #if CONFIG_LWIP_LAYER
 	struct netif * pnetiff = (struct netif *)&xnetif[1];
 #endif
-	printf("[ATWB](_AT_WLAN_AP_STA_ACTIVATE_)\n\r"); 
+	printf("[ATWB](_AT_WLAN_AP_STA_ACTIVATE_)\n\r");
 	if(ap.ssid.val[0] == 0){
           printf("[ATWB]Error: SSID can't be empty\n\r");
 		ret = RTW_BADARG;
@@ -1470,7 +1473,7 @@ void fATWB(void *arg)
           ap.security_type = RTW_SECURITY_OPEN;
 	} else {
 		if(ap.password_len <= RTW_WPA2_MAX_PSK_LEN &&
-			ap.password_len >= RTW_MIN_PSK_LEN){ 
+			ap.password_len >= RTW_MIN_PSK_LEN){
 			ap.security_type = RTW_SECURITY_WPA2_AES_PSK;
 			if(ap.password_len == RTW_WPA2_MAX_PSK_LEN){//password_len=64 means pre-shared key, pre-shared key should be 64 hex characters
 				unsigned char i,j;
@@ -1686,10 +1689,10 @@ exit:
 #endif
 
 #ifdef CONFIG_PROMISC
-void fATWM(void *arg){ 
+void fATWM(void *arg){
         int argc;
         char *argv[MAX_ARGC] = {0};
-        argv[0] = "wifi_promisc";        
+        argv[0] = "wifi_promisc";
 		printf("[ATWM]: _AT_WLAN_PROMISC_\n\r");
         if(!arg){
           printf("[ATWM]Usage: ATWM=DURATION_SECONDS[with_len]");
@@ -1700,7 +1703,7 @@ void fATWM(void *arg){
         }
         if((argc = parse_param(arg, argv)) > 1){
           cmd_promisc(argc, argv);
-        }        
+        }
 }
 #endif
 
@@ -1738,7 +1741,7 @@ void fATWw(void *arg){
         argv[argc++] = "wifi_ap_wps";
         argv[argc++] = arg;
         cmd_ap_wps(argc, argv);
-#endif		
+#endif
 }
 
 #if CONFIG_ENABLE_P2P
@@ -1779,7 +1782,7 @@ void fATWJ(void *arg){
         }
         if((argc = parse_param(arg, argv)) > 1){
 		cmd_p2p_connect(argc, argv);
-        }        
+        }
 }
 void fATWK(void *arg){
         int argc = 0;
@@ -1893,7 +1896,7 @@ void fATWX(void *arg)
 	int argc;
 	int ret = RTW_SUCCESS;
 	unsigned char *argv[MAX_ARGC] = {0};
-	
+
 	argv[0] = "airkiss";
 	argc = parse_param(arg, argv);
 	if(argc == 2) {
@@ -1909,11 +1912,11 @@ void fATWX(void *arg)
 		printf("\r\n[ATWX] Usage: ATWX=[start/stop]");
 		ret = RTW_ERROR;
 	}
-	
+
 #if defined(CONFIG_INIC_CMD_RSP) && CONFIG_INIC_CMD_RSP
 	if(ret != RTW_SUCCESS)
 		inic_c2h_msg("ATWX", RTW_ERROR, NULL, 0);
-#endif	
+#endif
 }
 #endif
 
@@ -1941,7 +1944,7 @@ void fATWZ(void *arg){
             break;
           }
         }while((i++) < len);
-        
+
         i = 0;
         do{
           if((*(copy+i)==',')) {
@@ -1949,7 +1952,7 @@ void fATWZ(void *arg){
             break;
           }
         }while((i++) < len);
-        
+
 #if defined(CONFIG_INIC_CMD_RSP) && CONFIG_INIC_CMD_RSP
 	ret = wext_private_command_with_retval(WLAN0_NAME, copy, buf, 32);
 	printf("\n\rPrivate Message: %s", (char *) buf);
@@ -2070,7 +2073,7 @@ void fATXP(void *arg)
 #endif
 		}
 	}
-	
+
 exit:
 #if defined(CONFIG_INIC_CMD_RSP) && CONFIG_INIC_CMD_RSP
 	inic_c2h_msg("ATXP", ret, res, res_len);
@@ -2084,7 +2087,7 @@ exit:
 void print_wlan_help(void *arg){
 	/* To avoid gcc warnings */
 	( void ) arg;
-	
+
 	printf("\n\rWLAN AT COMMAND SET:");
 	printf("\n\r==============================");
         printf("\n\r1. Wlan Scan for Network Access Point");
@@ -2161,7 +2164,7 @@ void fATPE(void *arg)
     }
 
     argc = parse_param(arg, argv);
-	
+
     if( (argc > 4) || (argc < 2) ){
         //at_printf("\r\n[ATPE] ERROR : command format error");
         error_no = 1;
@@ -2183,7 +2186,7 @@ void fATPE(void *arg)
 		IP4_ADDR(ip_2_ip4(&g_gw), ip_addr&0xff, (ip_addr>>8)&0xff, (ip_addr>>16)&0xff, (ip_addr>>24)&0xff);
 
     }
-	
+
     if(argv[3] != NULL){
         ip_addr = inet_addr(argv[3]);
 		IP4_ADDR(ip_2_ip4(&g_netmask), ip_addr&0xff, (ip_addr>>8)&0xff, (ip_addr>>16)&0xff, (ip_addr>>24)&0xff);
@@ -2218,15 +2221,15 @@ void fATWGRP(void *arg){
 	else
 	{
 		grp_id = atoi((const char *)(arg));
-		
+
 		for(i = 0; i < 2; i++)
 			if(grp_id == target_grp_id[i])
 				break;
-		
+
 		if(i == 2)
 			error = 1;
 	}
-	
+
 	if(error)
 	{
 		printf("[ATGP]error cmd  !!\n\r");
@@ -2240,7 +2243,7 @@ void fATWGRP(void *arg){
 		printf("[ATGP]: _AT_WLAN_SET_GRPID [%s]\n\r", (char*)arg);
 		wifi_set_group_id(grp_id);
 	}
-	
+
 	return;
 }
 #endif
@@ -2260,13 +2263,13 @@ void fATWPMK(void *arg){
 			pmk_enable = 0;
 		else
 			pmk_enable = 1;
-		
-		printf("pmk_enable = %d\r\n",pmk_enable);	
+
+		printf("pmk_enable = %d\r\n",pmk_enable);
 		printf("[ATPM]: _AT_WLAN_SET_PMK [%s]\n\r", (char*)arg);
 		wifi_set_pmk_cache_enable(pmk_enable);
 
 	}
-	
+
 	if(error)
 	{
 		printf("[ATPM]error cmd  !!\n\r");
@@ -2286,7 +2289,7 @@ void fATWPMF(void *arg){
 	int argc = 0;
 	char *argv[MAX_ARGC] = {0};
 	unsigned char pmf_mode;
-	
+
 	printf("[ATMF]: _AT_WLAN_PROTECTED_MANAGEMENT_FRAME_\r\n");
 
 	if (!arg) {
@@ -2301,14 +2304,14 @@ void fATWPMF(void *arg){
 			goto exit;
 		}
 	}
-	
+
 	if (strcmp(argv[1], "none") == 0) {
 		pmf_mode = 0;
 		ret = wifi_set_pmf(pmf_mode);
 		if(ret == 0)
-			printf("[ATMF]: set station no management protection\r\n");	
+			printf("[ATMF]: set station no management protection\r\n");
 	}
-	
+
 	if (strcmp(argv[1], "optional") == 0) {
 		pmf_mode = 1;
 		ret = wifi_set_pmf(pmf_mode);
@@ -2322,7 +2325,7 @@ void fATWPMF(void *arg){
 		if(ret == 0)
 			printf("[ATMF]: set station pmf required\r\n");
 	}
-	
+
 exit:
 #if defined(CONFIG_INIC_CMD_RSP) && CONFIG_INIC_CMD_RSP
 	inic_c2h_msg("ATMF", ret, NULL, 0);
@@ -2525,7 +2528,7 @@ static int _find_ap_from_scan_buf(char*buf, int buflen, char *target_ssid, void 
 {
 	rtw_wifi_setting_t *pwifi = (rtw_wifi_setting_t *)user_data;
 	int plen = 0;
-	
+
 	while(plen < buflen){
 		u8 len, ssid_len, security_mode;
 		char *ssid;
@@ -2575,7 +2578,7 @@ static int _get_ap_security_mode(IN char * ssid, OUT rtw_security_t *security_mo
 		*channel = wifi.channel;
 		return 1;
 	}
-	
+
 	return 0;
 }
 
@@ -2702,7 +2705,7 @@ void fATPN(void *arg)
 	*    Get security mode from scan list, if it's WEP and key_id isn't set by user,
 	*    system will use default key_id = 0
 	************************************************************/
-	//the keyID may be not set for WEP which may be confued with WPA2 
+	//the keyID may be not set for WEP which may be confued with WPA2
 	if((wifi.security_type == RTW_SECURITY_UNKNOWN)||(wifi.security_type == RTW_SECURITY_WPA2_AES_PSK))
 	{
 		int security_retry_count = 0;
@@ -2797,7 +2800,7 @@ exit:
 	if(wifi_mode == RTW_MODE_STA_AP) {
 		wifi_set_ch_deauth(1);
 	}
-	
+
 	init_wifi_struct();
 	wifi_reg_event_handler(WIFI_EVENT_CONNECT, atcmd_wifi_connected_hdl, NULL);
 	if(error_no == 0){
@@ -3039,8 +3042,8 @@ void atcmd_wifi_write_info_to_flash(rtw_wifi_setting_t *setting, int enable)
 	u32 data;
 
 	data_to_flash = (struct atcmd_wifi_conf *)malloc(sizeof(struct atcmd_wifi_conf));
-	
-	if(data_to_flash) {	
+
+	if(data_to_flash) {
 		if(enable){
 			memset((u8 *)data_to_flash, 0, sizeof(struct atcmd_wifi_conf));
 			atcmd_update_partition_info(AT_PARTITION_WIFI, AT_PARTITION_READ, (u8 *)data_to_flash, sizeof(struct atcmd_wifi_conf));
@@ -3162,7 +3165,7 @@ int atcmd_wifi_restore_from_flash(void)
 			//start AP here
 			goto exit;
 		}
-		
+
 		//Check if in AP mode
 		wext_get_mode(WLAN0_NAME, &mode);
 		if(mode == RTW_MODE_MASTER) {
@@ -3177,7 +3180,7 @@ int atcmd_wifi_restore_from_flash(void)
 				goto exit;
 			}
 		}
-		
+
 #if CONFIG_AUTO_RECONNECT
 		//setup reconnection flag
 		wifi_set_autoreconnect(0);
@@ -3340,7 +3343,7 @@ void fATRC(void *arg)
 	} else {
 		error_no = 2;
 	}
-	
+
 
 end:
 	if (error_no == 0) {
@@ -3452,7 +3455,7 @@ extern char *http_post_header(char *host, char *resource, char *type, int data_l
 
  void http_client_ver2(void)
  {
-	// char *message_fmt = "POST / HTTP/1.0\r\n\r\n"; 
+	// char *message_fmt = "POST / HTTP/1.0\r\n\r\n";
 	 int sockfd, bytes;
 	 char message[512],*response;
 	 int error_no = 0;
@@ -3463,16 +3466,16 @@ extern char *http_post_header(char *host, char *resource, char *type, int data_l
     serv_addr.sin_port = htons(http_port);
     memcpy(&serv_addr.sin_addr.s_addr,http_host->h_addr,4);
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
-	 
+
 	 if(sockfd < 0)
 	 	{
 
 		printf("[ERROR] http client Create socket failed\n");
 		 error_no = 20;
 		goto exit;
-	 
+
 	 	}
-	 
+
 	 if (connect(sockfd,(struct sockaddr *)&serv_addr,sizeof(serv_addr)) < 0){
 		 printf("[ERROR] http client connect failed\n");
 		 error_no = 21;
@@ -3481,9 +3484,9 @@ extern char *http_post_header(char *host, char *resource, char *type, int data_l
 
 	// printf("http_type is %d ",http_type);
  if  (http_type == 2)
-	
+
 {
-	
+
 	 //send get request
 	sprintf(message,"%s",http_get_header(host,http_resourse));
 	printf("\nRequest:\n%s\n",message);
@@ -3492,11 +3495,11 @@ extern char *http_post_header(char *host, char *resource, char *type, int data_l
 		 printf("[ERROR] http client send get packet failed\n");
 	     error_no = 21;
 		goto exit;}
-	 
+
 		}
- 
-    //set post request 
-   
+
+    //set post request
+
 
  else if(http_type ==3 )
  	{
@@ -3504,8 +3507,8 @@ extern char *http_post_header(char *host, char *resource, char *type, int data_l
 	sprintf(message,"%s",http_post_header(host, http_resourse,http_content ,strlen(post_data)));
 	printf("\nRequest header :\n%s\n",message);
 	bytes = write(sockfd,message,1024);
-	
-	
+
+
 		if (bytes < 0)
 			{printf("[ERROR] http client send post packet failed\n");
 		    error_no = 22;
@@ -3513,7 +3516,7 @@ extern char *http_post_header(char *host, char *resource, char *type, int data_l
 
 			write(sockfd,post_data,strlen(post_data));
 			printf("\nRequest body :\n%s\n",post_data);
-			
+
 
 	    }
 
@@ -3521,12 +3524,12 @@ extern char *http_post_header(char *host, char *resource, char *type, int data_l
 		{
           printf("\n\rhttp_type set err\n\r");
 		  goto exit;
-	
+
 	   }
 
- 	
+
 	 //receive response
-	
+
 	 response = malloc(1500);
 	 if(response ==NULL)
 		 printf("[ERROR] malloc failed\n");
@@ -3539,9 +3542,9 @@ extern char *http_post_header(char *host, char *resource, char *type, int data_l
 		 if (bytes == 0)
 			 break;
 		 printf("%s",response);
-		 
+
 	 } while (bytes > 0);
-	 
+
  exit:
  	 at_printf("%sERROR:%d\r\n", "+HTTPCLIENT:", error_no);
 	 ATCMD_NEWLINE_HASHTAG();
@@ -3567,7 +3570,7 @@ extern char *http_post_header(char *host, char *resource, char *type, int data_l
 	/* To avoid gcc warnings */
 	( void ) ctx;
 	( void ) level;
-	
+
 	printf("\n\r%s:%d: %s\n\r", file, line, str);
 }
 
@@ -3576,7 +3579,7 @@ static int my_random(void *p_rng, unsigned char *output, size_t output_len)
 {
 	/* To avoid gcc warnings */
 	( void ) p_rng;
-	
+
 	rtw_get_random_bytes(output, output_len);
 	return 0;
 }
@@ -3682,7 +3685,7 @@ static  unsigned char test_ca_crt[2048] =  \
 	mbedtls_x509_crt client_x509;
 	mbedtls_pk_context client_pk;
 	mbedtls_pk_context client_pub_key;
-	
+
 
 static void  https_client_ver2(void)
 
@@ -3692,8 +3695,8 @@ static void  https_client_ver2(void)
 	mbedtls_net_context server_fd;
 	mbedtls_ssl_context ssl;
 	mbedtls_ssl_config conf;
-	
-	
+
+
 
 	#if defined(configENABLE_TRUSTZONE) && (configENABLE_TRUSTZONE == 1) && defined(CONFIG_SSL_CLIENT_PRIVATE_IN_TZ) && (CONFIG_SSL_CLIENT_PRIVATE_IN_TZ == 1)
 	rtw_create_secure_context(STACKSIZE*4);
@@ -3706,7 +3709,7 @@ static void  https_client_ver2(void)
 	mbedtls_platform_set_calloc_free(my_calloc, my_free);
 
 
-/*  
+/*
  *  Prepare the certificate and key
  */
 
@@ -3715,22 +3718,22 @@ static void  https_client_ver2(void)
     printf("\n\r set client ssl verify \n\r");
 	mbedtls_x509_crt_init(&client_x509);
 	mbedtls_pk_init(&client_pk);
-	
 
-	
+
+
 
 		if ((ret = mbedtls_x509_crt_parse(&client_x509, (const unsigned char *) test_client_crt, strlen((char const *)test_client_crt) + 1)) != 0) {
 			https_err =12;
 			printf(" failed\n  ! mbedtls_x509_crt_parse returned %d,http_err is %d\n\n", ret,https_err);
 			 goto exit;
 		}
-	
+
 		if ((ret = mbedtls_x509_crt_parse(&client_x509, (const unsigned char *) test_ca_crt, strlen((char const *)test_ca_crt) + 1)) != 0) {
              https_err =13;
 			printf(" failed\n  ! mbedtls_x509_crt_parse returned %d,http_err is %d\n\n", ret,https_err);
 			goto exit;
 		}
-		
+
 	if ((ret = mbedtls_pk_parse_key(&client_pk, (const unsigned char *) test_client_key, strlen((char const *)test_client_key) + 1, NULL, 0)) != 0) {
 		https_err =14;
 		printf(" failed\n  ! mbedtls_pk_parse_key returned %d,http_err is %d\n\n", ret,https_err);
@@ -3738,7 +3741,7 @@ static void  https_client_ver2(void)
 
 	    }
 
-		
+
 	}
 
 
@@ -3783,14 +3786,14 @@ if(ssl_verify == 2){
 		mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_REQUIRED);
 
 			}
- else 
+ else
 	{
 	mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_NONE);
  }
 
     mbedtls_ssl_conf_rng(&conf, my_random, NULL);
-	
-	
+
+
 	if((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
 		https_err =16;
 		printf(" failed\n  ! mbedtls_ssl_setup returned %d,http_err is %d\n\n", ret,https_err);
@@ -3807,7 +3810,7 @@ if(ssl_verify == 2){
 	while((ret = mbedtls_ssl_handshake(&ssl)) != 0) {
 		if((ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE
 			&& ret != MBEDTLS_ERR_NET_RECV_FAILED) || retry_count >= 5) {
-			
+
             https_err =16;
 			printf(" failed\n\r  ! mbedtls_ssl_handshake returned -0x%x,http_err is %d\n\n", -ret,https_err);
 			goto exit;
@@ -3821,7 +3824,7 @@ if(ssl_verify == 2){
 
 
 	//printf("http_type is %d ",http_type);
-	
+
 if	(http_type == 2)
   {
 	/*
@@ -3855,7 +3858,7 @@ if	(http_type == 2)
         //post_datachar *post_data_1 = "param1=test_data1&param2=test_data2";
        // char *len_str = http_itoa(strlen(post_data));
 		len = sprintf(buf, "POST %s HTTP/1.1\r\nHost: %s\r\nContent-Type: %s\r\nContent-Length: %d\r\n\r\n", http_resourse, host, http_content,strlen(post_data) );
-     
+
 		while((ret = mbedtls_ssl_write(&ssl, buf, len)) <= 0) {
 				if(ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
 					https_err =18;
@@ -3866,15 +3869,15 @@ if	(http_type == 2)
 
 		    len = ret;
 			printf(" %d bytes header  written\n\n%s", len, (char *) buf);
-			
+
 	     while(( ret = mbedtls_ssl_write(&ssl, (unsigned char*)post_data,strlen(post_data ))) <=0){
-		  
+
 		         printf(" failed\n\r  ! mbedtls_ssl_write poat_data returned %d\n\r",ret);
-				 	
+
 					goto exit;
 	     	}
 		  printf("write post data to server %s",post_data);
-			
+
 }
 
 else {
@@ -3891,18 +3894,18 @@ else {
    len = sizeof(buf) - 1;
    memset(buf, 0, sizeof(buf));
 
-	
+
 		while((read_size = mbedtls_ssl_read(&ssl, buf, len)) > 0) {
-			
+
 
 			printf("\n\r read resource %d bytes,%s\n\r", read_size,buf);
 			resource_size += read_size;
 		}
 
 		printf("exit read. ret = %d\n", read_size);
-		
 
-	
+
+
 
 	mbedtls_ssl_close_notify(&ssl);
 
@@ -3925,18 +3928,18 @@ exit:
  {
 	 /* To avoid gcc warnings */
 	 ( void ) param;
-	
+
 	 https_client_ver2();
 	 vTaskDelete(NULL);
  }
 
 
- 
+
  static void http_client_thread_ver2(void *param)
  {
 	 /* To avoid gcc warnings */
 	( void ) param;
-	 
+
 	 http_client_ver2();
 	 vTaskDelete(NULL);
  }
@@ -3944,13 +3947,12 @@ exit:
 /* http/https get/post example   */
 void fATPb(void *arg)
 {
- int argc;
- char *argv[MAX_ARGC] = {0};
- int error_no = 0;
-  int transport_type;
+	int argc;
+	char *argv[MAX_ARGC] = {0};
+	int error_no = 0;
+	int transport_type;
+	argc = parse_param(arg, argv);
 
- argc = parse_param(arg, argv);
- 
 	if(!arg){
 		AT_DBG_MSG(AT_FLAG_WIFI, AT_DBG_ERROR,
 			"[+HTTPCLIENT] Usage: AT+HTTPCLIENT=<HTTP:1/HTTPS:2><host>,<port>,<GET:2/POST:3>,<path>,<ca:1:N/2:Y>,<content-type>,<data>\n\r "\
@@ -3969,61 +3971,59 @@ void fATPb(void *arg)
 	goto err_exit;
 	}
 
-	
+
 	http_port = atoi((char*)argv[3]);
-	if(http_port == NULL)
-		{
-    printf("\n\r set http port failed \n\r");
-	error_no = 3;
-	goto err_exit;
+	if(http_port == 0)
+	{
+	    printf("\n\r set http port failed \n\r");
+		error_no = 3;
+		goto err_exit;
 	}
 	port_ssl = argv[3];
     http_host = gethostbyname(argv[2]);
-	
-		if(http_host == NULL) {
-	 printf("\n\r set http host failed \n\r");
-	error_no = 4;
-	goto err_exit;
-    	}
-	
+
+	if(http_host == NULL) {
+		printf("\n\r set http host failed \n\r");
+		error_no = 4;
+		goto err_exit;
+    }
+
 	host=argv[2];
-	
+
     http_type = atoi((char*)argv[4]);//GET:2/POST:3
-    
-    	if(http_type == NULL) {
-	 printf("\n\r set http type failed \n\r");
-	error_no = 5;
-	goto err_exit;
-    	}
-   
+
+    if(http_type == 0) {
+		 printf("\n\r set http type failed \n\r");
+		error_no = 5;
+		goto err_exit;
+    }
+
 
 	http_resourse=argv[5];
-		if(http_resourse == NULL) {
-	 printf("\n\r set http resourse failed \n\r");
-	error_no = 6;
-	goto err_exit;
-    	}	
+	if (http_resourse == NULL) {
+		printf("\n\r set http resourse failed \n\r");
+		error_no = 6;
+		goto err_exit;
+	}
 
     http_content = argv[7];
-		if((http_type == 3) && (http_content == NULL))
-			{
-			printf("\n\r set post content  failed \n\r");
-			   error_no = 7;
-			   goto err_exit;
+	if((http_type == 3) && (http_content == NULL))
+	{
+		printf("\n\r set post content  failed \n\r");
+		error_no = 7;
+		goto err_exit;
+	}
 
 
-		}
+	 post_data=argv[8];
 
-	
-	 post_data=argv[8]; 
-		
 	 if((http_type == 3) && (post_data == NULL))
 				 {
 				 printf("\n\r set post data failed \n\r");
 					error_no = 8;
 					goto err_exit;
-	 
-	 
+
+
 			 }
 
     ssl_verify = atoi((char*)argv[6]);
@@ -4033,15 +4033,15 @@ void fATPb(void *arg)
 				 printf("\n\r set https client verufy failed \n\r");
 					error_no = 9;
 					goto err_exit;
-	 
-	 
+
+
 			 }
 
 if (transport_type == 1)
 {
 
  if(xTaskCreate(http_client_thread_ver2, "http_client_thread_ver2", 2048, NULL, tskIDLE_PRIORITY + 1, NULL) != pdPASS)
-   {	
+   {
 		AT_DBG_MSG(AT_FLAG_WIFI, AT_DBG_ERROR,"[ATPb] ERROR: Create http client task failed.");
 		error_no = 10;
 		goto err_exit;
@@ -4051,15 +4051,15 @@ if (transport_type == 1)
 else  if (transport_type == 2)
 {
       if(xTaskCreate(https_client_thread_ver2, "https_client_thread_ver2", 2048, NULL, tskIDLE_PRIORITY + 1, NULL) != pdPASS)
-   {	
+   {
 		AT_DBG_MSG(AT_FLAG_WIFI, AT_DBG_ERROR,"[ATPb] ERROR: Create https client task failed.");
 		error_no = 11;
 		goto err_exit;
 	}
-     
+
 }
     err_exit:
-		
+
 		at_printf("%sERROR:%d\r\n", "+HTTPCLIENT:", error_no);
 		ATCMD_NEWLINE_HASHTAG();
 		return;
@@ -4082,7 +4082,7 @@ void fATPB(void *arg)
   int cert_len;
   unsigned char *output_buf;
   argc = parse_param(arg, argv);
- 
+
 	if(!arg){
 		AT_DBG_MSG(AT_FLAG_WIFI, AT_DBG_ERROR,
 			"[+SSLCRET] Usage : AT+SSLCRET=<TYPE:client CA:1/privkey:2/server root CA :3/pubkey:4>,[<LENGTH>,<CRT>]\n\r"\
@@ -4101,56 +4101,56 @@ void fATPB(void *arg)
 	goto err_exit;
 	}
 
-		
+
 /*  -----get certificate&key-------*/
-     
+
     if( argc == 2 ){
 
 	 if(cert_type == 1){
 
         output_buf = malloc(strlen(test_client_crt));
 		 memset(output_buf,0,strlen(test_client_crt));
-		
+
 	    strncpy((char *)output_buf, test_client_crt, strlen(test_client_crt));
 		output_buf[strlen(test_client_crt)] = '\0';
-	    
-		   
+
+
 	    printf("\n\r read client CA pem is %s\n\r", output_buf);
 
 		free(output_buf);
-		
+
 	    goto err_exit;
-		 
+
 		 }
-        
+
 		else  if(cert_type == 2){
-			
+
 		output_buf = malloc(strlen(test_client_key));
 		memset(output_buf,0,strlen(test_client_key));
 
 	    strncpy((char *)output_buf, test_client_key, strlen(test_client_key));
 		output_buf[strlen(test_client_key)] = '\0';
-		
+
         printf("\n\r read privkey is %s\n\r ", output_buf);
-		
+
 		free(output_buf);
 		goto err_exit;
-	
+
 		 	}
 
 
 		 else if(cert_type == 4){
-		 
+
 
 		 if ((ret = mbedtls_x509_crt_parse(&client_x509, (const unsigned char *) test_client_crt, strlen((char const *)test_client_crt) + 1)) != 0) {
-					  
+
 					 printf(" failed\n	! mbedtls_x509_crt_parse returned %d \n\n", ret);
 					 error_no = 3;
 					goto err_exit;
 				 }
-			 
+
 				 if ((ret = mbedtls_x509_crt_parse(&client_x509, (const unsigned char *) test_ca_crt, strlen((char const *)test_ca_crt) + 1)) != 0) {
-					  
+
 					 printf(" failed\n	! mbedtls_x509_crt_parse returned %d \n\n", ret );
 					 error_no = 4;
 					goto err_exit;
@@ -4159,7 +4159,7 @@ void fATPB(void *arg)
 
 	     mbedtls_pk_init(&client_pub_key);
 		 memcpy(&client_pub_key, &client_x509.pk, sizeof(mbedtls_pk_context));
-		 
+
 
 		 output_buf = malloc(1024);
 		 memset(output_buf,0,1024);
@@ -4167,14 +4167,14 @@ void fATPB(void *arg)
 		 	{
             printf("parse public key  err");
 			goto err_exit;
-		 
+
 		 	}
 
             printf("read pubkey is %s\n", output_buf);
 			free(output_buf);
-			
+
 		 goto err_exit;
-	
+
 	        }
 
 		 else if(cert_type == 3){
@@ -4182,14 +4182,14 @@ void fATPB(void *arg)
 
 		 output_buf = malloc(strlen(test_ca_crt));
 		 memset(output_buf,0,strlen(test_ca_crt));
-		
+
 	    strncpy((char *)output_buf, test_ca_crt, strlen(test_ca_crt));
 		output_buf[strlen(test_ca_crt)] = '\0';
-	   
+
 		printf("\n\r read server root  CA  is %s\n\r", output_buf);
 
 		free(output_buf);
-		
+
 	    goto err_exit;
 
 
@@ -4210,63 +4210,63 @@ void fATPB(void *arg)
 
 
 	cert_len=atoi((char*)argv[2]);
-	
+
 	printf("/n/rcert_len is %d/n/r",cert_len);
 
 	output_buf = malloc(cert_len);
-	
+
 	memset(output_buf,0,cert_len);
-	
+
 	output_buf =  argv[3];
 
 
 	 if(cert_type == 1){
 
 	     printf("\n\r ----start write client CA pem----\n\r  ");
-         strncpy(test_client_crt ,output_buf,strlen(output_buf)); 
+         strncpy(test_client_crt ,output_buf,strlen(output_buf));
 		test_client_crt[strlen(output_buf)] ='\0';
-		
-		 
+
+
 
         printf("\n\r set client CA pem is \n\r%s\n\r", test_client_crt);
 
 		free(output_buf);
-		
+
 	    goto err_exit;
-		 
+
 		 }
 
 
 	 else if(cert_type == 2){
-	 
+
 			  printf("\n\r ----start write client privekey---\n\r  ");
-			  strncpy(test_client_key ,output_buf,strlen(output_buf)); 
+			  strncpy(test_client_key ,output_buf,strlen(output_buf));
 			  test_client_key[strlen(output_buf)] ='\0';
-	 
+
 			 printf("\n\r set client peiveley is \n\r%s\n\r", test_client_key);
-	 
+
 			 free(output_buf);
-			 
+
 			 goto err_exit;
-			  
+
 			  }
 
 
 	else  if(cert_type == 3){
-		 
+
 				  printf("\n\r ----start write server root CA---\n\r  ");
-				  strncpy(test_ca_crt ,output_buf,strlen(output_buf)); 
+				  strncpy(test_ca_crt ,output_buf,strlen(output_buf));
 				  test_ca_crt[strlen(output_buf)] ='\0';
-		 
+
 				 printf("\n\r set server  root CA is \n\r%s\n\r", test_ca_crt);
-		 
+
 				 free(output_buf);
-				 
+
 				 goto err_exit;
-				  
+
 				  }
 
-else 
+else
 
 {
            printf("\n\r cert type set invalid \n\r");
@@ -4283,7 +4283,7 @@ else {
     at_printf("%sOK\r\n", "+SSLCRET:");
 	ATCMD_NEWLINE_HASHTAG();
 
-err_exit:				
+err_exit:
 	at_printf("%sERROR:%d\r\n", "+SSLCRET:", error_no);
 	ATCMD_NEWLINE_HASHTAG();
     return;
@@ -4292,9 +4292,9 @@ err_exit:
 void fATWR(void *arg){
 	/* To avoid gcc warnings */
 	( void ) arg;
-	
+
 	int rssi = 0;
-	printf("[ATWR]: _AT_WLAN_GET_RSSI_\n\r"); 
+	printf("[ATWR]: _AT_WLAN_GET_RSSI_\n\r");
 	wifi_get_rssi(&rssi);
 	at_printf("RSSI = %d\r\n", rssi);
 	at_printf("%sOK\r\n", "+WLRSSI:");
@@ -4324,7 +4324,7 @@ void fATWL(void *arg){
 #if CONFIG_SSL_CLIENT
 	int argc;
 	char *argv[MAX_ARGC] = {0};
-        printf("[ATWL]: _AT_WLAN_SSL_CLIENT_\n\r"); 
+        printf("[ATWL]: _AT_WLAN_SSL_CLIENT_\n\r");
         argv[0] = "ssl_client";
         if(!arg){
           printf("ATWL=SSL_SERVER_HOST\n\r");
@@ -4454,7 +4454,7 @@ log_item_t at_wifi_items[ ] = {
 #if ATCMD_VER == ATVER_1
 #if CONFIG_LWIP_LAYER
 	{"ATWL", fATWL,{NULL,NULL}},
-	{"ATWI", fATWI,{NULL,NULL}}, 
+	{"ATWI", fATWI,{NULL,NULL}},
 	{"ATWT", fATWT,{NULL,NULL}},
 	{"ATWU", fATWU,{NULL,NULL}},
 #endif
@@ -4490,7 +4490,7 @@ log_item_t at_wifi_items[ ] = {
 #endif
 #ifdef CONFIG_AP_SECURITY
 	{"ATW7", fATW7,},
-#endif	
+#endif
 	{"ATWA", fATWA,{NULL,NULL}},
 #ifdef  CONFIG_CONCURRENT_MODE
 	{"ATWB", fATWB,{NULL,NULL}},
@@ -4502,7 +4502,7 @@ log_item_t at_wifi_items[ ] = {
 	{"ATWP", fATWP,{NULL,NULL}},
 #if CONFIG_WOWLAN_SERVICE
 	{"ATWV", fATWV,},
-#endif	
+#endif
 	{"ATWR", fATWR,{NULL,NULL}},
 	{"ATWS", fATWS,{NULL,NULL}},
 #ifdef WIFI_PERFORMANCE_MONITOR
@@ -4521,9 +4521,9 @@ log_item_t at_wifi_items[ ] = {
 #if CONFIG_OTA_UPDATE
 	{"ATWO", fATWO,},
 #endif
-#if (CONFIG_INCLUDE_SIMPLE_CONFIG)	
+#if (CONFIG_INCLUDE_SIMPLE_CONFIG)
 	{"ATWQ", fATWQ,{NULL,NULL}},
-#endif	
+#endif
 #if defined(CONFIG_INCLUDE_DPP_CONFIG) && CONFIG_INCLUDE_DPP_CONFIG
 	{"ATWq", fATWq,},
 #endif
@@ -4542,7 +4542,7 @@ log_item_t at_wifi_items[ ] = {
 #endif
 
 #if CONFIG_AIRKISS
-	{"ATWX", fATWX,}, 
+	{"ATWX", fATWX,},
 #endif
 	{"ATW?", fATWx,{NULL,NULL}},
 	{"ATW+ABC", fATWx,{NULL,NULL}},
