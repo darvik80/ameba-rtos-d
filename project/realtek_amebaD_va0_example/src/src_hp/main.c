@@ -2,7 +2,6 @@
 #include "ameba_soc.h"
 #include "example_entry.h"
 #include "rtl8721d_system.h"
-#include "../../inc/inc_hp/main.h"
 
 #if defined(CONFIG_FTL_ENABLED)
 #include "ftl_int.h"

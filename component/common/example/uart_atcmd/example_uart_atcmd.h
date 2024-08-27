@@ -28,8 +28,8 @@
 #define UART_RTS			PA_22
 #define UART_CTS			PA_19
 #elif (CONFIG_AMEBA == AMEBAD )
-#define UART_TX			PB_19
-#define UART_RX			PB_18
+#define UART_TX			PA_7
+#define UART_RX			PA_8
 #define UART_RTS			PA_16
 #define UART_CTS			PA_17
 #elif (CONFIG_AMEBA == AMEBAZ2)

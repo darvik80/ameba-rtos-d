@@ -1,19 +1,6 @@
 MAKE := make
 CC := gcc
 
-DIR_MAIN := project/realtek_amebaD_va0_example
-DIR_COMPONENT := component
-
-SRC := $(wildcard **/*.c */*/*.c */*/*/*.c */*/*/*/*.c */*/*/*/*/*.c */*/*/*/*/*/*.c */*/*/*/*/*/*/*.c)
-INC := $(shell find $(DIR_COMPONENT) -type d)
-INC += $(shell find $(DIR_MAIN) -type d)
-INC_DIR := $(foreach d, $(INC), -I$d)
-
-.PHONY: all clean flash stub
-
-stub:
-	$(CC) -c $(SRC) -I$(INC_DIR)
-
 all:
 	$(MAKE) -C project/realtek_amebaD_va0_example/GCC-RELEASE/project_lp
 	$(MAKE) -C project/realtek_amebaD_va0_example/GCC-RELEASE/project_hp
@@ -34,3 +21,15 @@ clean:
 	$(MAKE) -C project/realtek_amebaD_va0_example/GCC-RELEASE/project_lp clean
 	$(MAKE) -C project/realtek_amebaD_va0_example/GCC-RELEASE/project_hp clean
 
+DIR_MAIN := project/realtek_amebaD_va0_example
+DIR_COMPONENT := component
+
+SRC := $(wildcard **/*.c */*/*.c */*/*/*.c */*/*/*/*.c */*/*/*/*/*.c */*/*/*/*/*/*.c */*/*/*/*/*/*/*.c)
+INC := $(shell find $(DIR_COMPONENT) -type d)
+INC += $(shell find $(DIR_MAIN) -type d)
+INC_DIR := $(foreach d, $(INC), -I$d)
+
+.PHONY: all clean flash stub
+
+stub:
+	$(CC) -c $(SRC) -I$(INC_DIR)

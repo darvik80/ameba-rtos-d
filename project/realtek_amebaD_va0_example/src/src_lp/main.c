@@ -1,6 +1,4 @@
 #include "ameba_soc.h"
-#include "main.h"
-
 
 void app_captouch_init(void);
 void app_keyscan_init(u8 reset_status);
